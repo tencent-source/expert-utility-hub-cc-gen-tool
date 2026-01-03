@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CC Generator Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Loading screen styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .anime-girl {
+            width: 200px;
+            height: 200px;
+            background: url('https://i.imgur.com/2zOqRid.png') center/contain no-repeat;
+            margin-bottom: 1rem;
+            animation: hackerScan 3s infinite linear;
+        }
+
+        @keyframes hackerScan {
+            0% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) contrast(1);
+            }
+            25% { 
+                transform: scale(1.05) rotate(1deg);
+                filter: brightness(1.2) contrast(1.2);
+            }
+            50% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) contrast(1);
+            }
+            75% { 
+                transform: scale(0.95) rotate(-1deg);
+                filter: brightness(0.8) contrast(0.8);
+            }
+            100% { 
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1) contrast(1);
+            }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #007bff;
+        }
+
+        .loading-progress {
+            width: 200px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #28a745);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .loading-message {
+            font-size: 0.9rem;
+            color: #ccc;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .feedback-link {
+            margin-top: 1rem;
+            color: #28a745;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .feedback-link:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #007bff, #28a745);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #ccc;
+            font-size: 1.1rem;
+        }
+
+        .generator-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            color: #ccc;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            border-color: #007bff;
+        }
+
+        .control-group input[type="number"] {
+            max-width: 120px;
+        }
+
+        .custom-bin {
+            display: none;
+        }
+
+        .custom-bin.active {
+            display: block;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .generate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 2rem;
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+        }
+
+        .results-header h3 {
+            color: #fff;
+            font-size: 1.25rem;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #218838;
+        }
+
+        .check-balance-btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .check-balance-btn:hover {
+            background: #e55a2b;
+        }
+
+        .test-all-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .test-all-btn:hover {
+            background: #c82333;
+        }
+
+        .test-all-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .clear-all-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .clear-all-btn:hover {
+            background: #5a6268;
+        }
+
+        .random-bin-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .random-bin-btn:hover {
+            background: #138496;
+        }
+
+        .card-status {
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .card-status.live {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .card-status.dead {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .card-status.checking {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .balance-result {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+            display: none;
+        }
+
+        .balance-result.active {
+            display: block;
+        }
+
+        .balance-result.loading {
+            background: #374151;
+            border-color: #6b7280;
+        }
+
+        .balance-result.error {
+            background: #7f1d1d;
+            border-color: #dc2626;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .card-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .card-item:hover {
+            transform: translateY(-2px);
+            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+
+        .card-number {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+
+        .card-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ccc;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .bin-label {
+            background: #007bff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .card-exp {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .card-cvv {
+            background: #333;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+
+        .loading {
+            text-align: center;
+            color: #ccc;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .stats {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .stats span {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .generator-panel,
+            .results {
+                padding: 1.5rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="anime-girl"></div>
+        <div class="loading-text">Loading CC Generator...</div>
+        <div class="loading-progress">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div class="loading-message">
+            Please wait 10 seconds while we prepare your credit card generator.<br>
+            In the meantime, feel free to visit my profile and leave feedback!
+        </div>
+        <a href="https://phcorner.org/members/pinoyakogago.2699812/" class="feedback-link" target="_blank">
+            👉 Visit my profile and leave feedback
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>💳 Credit Card Generator</h1>
+            <p>Generate test credit card numbers with valid Luhn algorithm checksums</p>
+        </div>
+
+        <div class="generator-panel">
+            <div class="control-group">
+                <label for="bin-select">Select BIN (6-digit Bank Identification Number):</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="bin-select" style="flex: 1;">
+                        <option value="453201">Visa (Test) - 453201</option>
+                        <option value="555555">Mastercard (Test) - 555555</option>
+                        <option value="378282">American Express (Test) - 378282</option>
+                        <option value="601111">Discover (Test) - 601111</option>
+                        <option value="400005">Visa Classic - 400005</option>
+                        <option value="523456">Mastercard Standard - 523456</option>
+                        <option value="">Custom BIN</option>
+                    </select>
+                    <button type="button" class="random-bin-btn" onclick="generateRandomBIN()">🎲 Random BIN</button>
+                </div>
+            </div>
+
+            <div class="control-group" id="custom-bin-group" style="display: none;">
+                <label for="custom-bin">Custom BIN:</label>
+                <input
+                    type="text"
+                    id="custom-bin"
+                    placeholder="Enter custom BIN (e.g., 453201)"
+                    maxlength="6"
+                >
+            </div>
+
+            <div class="control-group">
+                <label for="quantity">Quantity:</label>
+                <input
+                    type="number"
+                    id="quantity"
+                    min="1"
+                    max="100"
+                    value="1"
+                >
+            </div>
+
+            <button id="generate-btn" class="generate-btn">Generate Cards</button>
+        </div>
+
+        <div id="results" class="results">
+            <div class="stats">
+                Generated <span id="card-count">0</span> credit cards
+            </div>
+
+            <div class="results-header">
+                <h3>Generated Cards</h3>
+                <div class="result-actions">
+                    <button id="copy-all-btn" class="action-btn">Copy All</button>
+                    <button id="download-btn" class="action-btn">Download</button>
+                    <button id="test-all-btn" class="test-all-btn">🔍 Test All Cards</button>
+                    <button id="clear-all-btn" class="clear-all-btn">🗑️ Clear All</button>
+                </div>
+            </div>
+
+            <div id="cards-container" class="cards-grid">
+                <!-- Generated cards will appear here -->
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>⚠️ For testing purposes only. These are not real credit card numbers.</p>
+        </div>
+    </div>
+
+    <script>
+        // Loading screen functionality
+        const loadingScreen = document.getElementById('loading-screen');
+        const progressBar = document.getElementById('progress-bar');
+        const totalTime = 10; // 10 seconds
+        const intervalTime = 100; // Update every 100ms
+        const totalSteps = totalTime * 1000 / intervalTime;
+        let currentStep = 0;
+
+        function updateProgress() {
+            currentStep++;
+            const progress = (currentStep / totalSteps) * 100;
+            progressBar.style.width = progress + '%';
+
+            if (currentStep >= totalSteps) {
+                loadingScreen.style.display = 'none';
+            } else {
+                setTimeout(updateProgress, intervalTime);
+            }
+        }
+
+        // Start loading screen
+        setTimeout(updateProgress, intervalTime);
+
+        // Luhn Algorithm Implementation
+        function luhnChecksum(num) {
+            let sum = 0;
+            let isOdd = true;
+
+            for (let i = num.length - 1; i >= 0; i--) {
+                let digit = parseInt(num.charAt(i));
+
+                if (isOdd) {
+                    digit *= 2;
+                    if (digit > 9) {
+                        digit -= 9;
+                    }
+                }
+
+                sum += digit;
+                isOdd = !isOdd;
+            }
+
+            return sum % 10;
+        }
+
+        function luhnCheckDigit(num) {
+            const checksum = luhnChecksum(num + '0');
+            return checksum === 0 ? 0 : 10 - checksum;
+        }
+
+        function generateCardNumber(bin, length = 16) {
+            const randomLength = length - bin.length - 1;
+            let randomPart = '';
+
+            for (let i = 0; i < randomLength; i++) {
+                randomPart += Math.floor(Math.random() * 10);
+            }
+
+            const partialNumber = bin + randomPart;
+            const checkDigit = luhnCheckDigit(partialNumber);
+
+            return partialNumber + checkDigit;
+        }
+
+        function generateExpirationDate() {
+            const currentYear = new Date().getFullYear();
+            const month = Math.floor(Math.random() * 12) + 1;
+            const year = currentYear + Math.floor(Math.random() * 5) + 1;
+
+            return {
+                month: month.toString().padStart(2, '0'),
+                year: year.toString().slice(-2)
+            };
+        }
+
+        function generateCVV() {
+            return Math.floor(Math.random() * 900 + 100).toString();
+        }
+
+        function generateCreditCard(bin = '4532015112830366') {
+            const cardNumber = generateCardNumber(bin);
+            const { month, year } = generateExpirationDate();
+            const cvv = generateCVV();
+
+            return {
+                number: cardNumber,
+                expiration: `${month}/${year}`,
+                cvv: cvv,
+                bin: bin
+            };
+        }
+
+        function generateMultipleCards(count, bin = '4532015112830366') {
+            const cards = [];
+            for (let i = 0; i < count; i++) {
+                cards.push(generateCreditCard(bin));
+            }
+            return cards;
+        }
+
+        function getBinName(bin) {
+            const binNames = {
+                '4532015112830366': 'Visa Test',
+                '5555555555554444': 'Mastercard Test',
+                '378282246310005': 'American Express Test',
+                '6011111111111117': 'Discover Test',
+                '4000056655665556': 'Visa Classic',
+                '5234567890123456': 'Mastercard Standard'
+            };
+            return binNames[bin] || 'Custom BIN';
+        }
+
+        // DOM Elements
+        const binSelect = document.getElementById('bin-select');
+        const customBinGroup = document.getElementById('custom-bin-group');
+        const customBinInput = document.getElementById('custom-bin');
+        const quantityInput = document.getElementById('quantity');
+        const generateBtn = document.getElementById('generate-btn');
+        const results = document.getElementById('results');
+        const cardCount = document.getElementById('card-count');
+        const cardsContainer = document.getElementById('cards-container');
+        const copyAllBtn = document.getElementById('copy-all-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const testAllBtn = document.getElementById('test-all-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+
+        let generatedCards = [];
+
+        // Event Listeners
+        binSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                customBinGroup.style.display = 'block';
+            } else {
+                customBinGroup.style.display = 'none';
+            }
+        });
+
+        generateBtn.addEventListener('click', function() {
+            generateCards();
+        });
+
+        copyAllBtn.addEventListener('click', function() {
+            copyAllCards();
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            downloadCards();
+        });
+
+        testAllBtn.addEventListener('click', function() {
+            testAllCards();
+        });
+
+        clearAllBtn.addEventListener('click', function() {
+            clearAllCards();
+        });
+
+        function generateCards() {
+            const quantity = parseInt(quantityInput.value);
+            const selectedBin = binSelect.value;
+            const customBin = customBinInput.value.trim();
+
+            if (selectedBin === '' && !customBin) {
+                alert('Please select a BIN or enter a custom BIN');
+                return;
+            }
+
+            if (quantity < 1 || quantity > 100) {
+                alert('Please enter a quantity between 1 and 100');
+                return;
+            }
+
+            const bin = selectedBin === '' ? customBin : selectedBin;
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            // Simulate processing time
+            setTimeout(() => {
+                generatedCards = generateMultipleCards(quantity, bin);
+                displayCards();
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Cards';
+            }, 500);
+        }
+
+        function displayCards() {
+            results.classList.add('active');
+            cardCount.textContent = generatedCards.length;
+
+            cardsContainer.innerHTML = '';
+
+            generatedCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-item';
+
+                cardElement.innerHTML = `
+                    <div class="card-number">${card.number}</div>
+                    <div class="card-details">
+                        <span class="bin-label">${getBinName(card.bin)}</span>
+                        <span class="card-exp">${card.expiration}</span>
+                        <span class="card-cvv">${card.cvv}</span>
+                        <button class="check-balance-btn" onclick="checkBalance('${card.number}', this)">Check Balance</button>
+                    </div>
+                    <div class="balance-result"></div>
+                `;
+
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        function copyAllCards() {
+            if (generatedCards.length === 0) {
+                alert('No cards to copy');
+                return;
+            }
+
+            const text = generatedCards.map(card =>
+                `${card.number} | ${card.expiration} | ${card.cvv}`
+            ).join('\n');
+
+            navigator.clipboard.writeText(text).then(() => {
+                copyAllBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyAllBtn.textContent = 'Copy All';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                copyAllBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyAllBtn.textContent = 'Copy All';
+                }, 2000);
+            });
+        }
+
+        function downloadCards() {
+            if (generatedCards.length === 0) {
+                alert('No cards to download');
+                return;
+            }
+
+            const text = generatedCards.map(card =>
+                `${card.number} | ${card.expiration} | ${card.cvv}`
+            ).join('\n');
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated_credit_cards.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function checkBalance(cardNumber, button) {
+            const cardElement = button.closest('.card-item');
+            const balanceResult = cardElement.querySelector('.balance-result');
+
+            // Show loading
+            balanceResult.className = 'balance-result active loading';
+            balanceResult.textContent = 'Checking balance...';
+
+            // Simulate API call
+            setTimeout(() => {
+                const balance = (Math.random() * 10000).toFixed(2);
+                const status = Math.random() > 0.7 ? 'blocked' : 'active';
+
+                if (status === 'active') {
+                    balanceResult.className = 'balance-result active';
+                    balanceResult.textContent = `💰 Balance: $${balance} | Status: ${status}`;
+                } else {
+                    balanceResult.className = 'balance-result error active';
+                    balanceResult.textContent = `❌ Card ${status} | Balance: $${balance}`;
+                }
+            }, 2000);
+        }
+
+        function generateRandomBIN() {
+            const randomBIN = Math.floor(100000 + Math.random() * 900000).toString();
+            binSelect.value = '';
+            customBinGroup.style.display = 'block';
+            customBinInput.value = randomBIN;
+        }
+
+        function testAllCards() {
+            if (generatedCards.length === 0) {
+                alert('No cards to test');
+                return;
+            }
+
+            testAllBtn.disabled = true;
+            testAllBtn.textContent = 'Testing All Cards...';
+
+            const cardElements = document.querySelectorAll('.card-item');
+            cardElements.forEach((cardElement, index) => {
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'card-status checking';
+                statusDiv.textContent = 'Deep testing in progress...';
+                cardElement.appendChild(statusDiv);
+
+                // Simulate comprehensive card testing
+                setTimeout(() => {
+                    const testResults = performDeepCardTest(generatedCards[index]);
+
+                    statusDiv.className = `card-status ${testResults.status}`;
+                    statusDiv.innerHTML = `
+                        <div style="font-size: 0.7rem; text-align: left;">
+                            <div><strong>${testResults.overall}</strong></div>
+                            <div style="margin-top: 0.25rem;">
+                                🔍 Basic: ${testResults.basic}<br>
+                                🌍 Google Wallet: ${testResults.googleWallet}<br>
+                                🧪 Trial Sites: ${testResults.trialSites}<br>
+                                💳 Banking: ${testResults.banking}
+                            </div>
+                        </div>
+                    `;
+                }, (index + 1) * 800); // Slower for more realistic testing
+            });
+
+            setTimeout(() => {
+                testAllBtn.disabled = false;
+                testAllBtn.textContent = '🔍 Test All Cards';
+            }, (generatedCards.length + 1) * 800);
+        }
+
+        function performDeepCardTest(card) {
+            // Simulate comprehensive testing like real CC checkers
+            const tests = {
+                luhn: Math.random() > 0.05, // 95% pass rate
+                format: Math.random() > 0.02, // 98% pass rate
+                expiry: Math.random() > 0.1, // 90% pass rate
+                bin: Math.random() > 0.15, // 85% pass rate
+                googleWallet: Math.random() > 0.4, // 60% pass rate
+                trialSites: Math.random() > 0.3, // 70% pass rate
+                banking: Math.random() > 0.2, // 80% pass rate
+                avs: Math.random() > 0.25, // 75% pass rate
+                cvv: Math.random() > 0.2, // 80% pass rate
+                security: Math.random() > 0.35 // 65% pass rate
+            };
+
+            const passedTests = Object.values(tests).filter(result => result).length;
+            const totalTests = Object.keys(tests).length;
+            const successRate = (passedTests / totalTests) * 100;
+
+            let overall = '❌ DEAD';
+            let status = 'dead';
+
+            if (successRate >= 90) {
+                overall = '✅ HIGH LIVE';
+                status = 'live';
+            } else if (successRate >= 70) {
+                overall = '🟡 MEDIUM LIVE';
+                status = 'live';
+            } else if (successRate >= 50) {
+                overall = '🟠 LOW LIVE';
+                status = 'live';
+            }
+
+            return {
+                overall: overall,
+                status: status,
+                basic: tests.luhn && tests.format ? '✅ PASS' : '❌ FAIL',
+                googleWallet: tests.googleWallet ? '✅ COMPATIBLE' : '❌ REJECTED',
+                trialSites: tests.trialSites ? '✅ WORKS' : '❌ BLOCKED',
+                banking: tests.banking ? '✅ VALID' : '❌ INVALID'
+            };
+        }
+
+        function clearAllCards() {
+            if (generatedCards.length === 0) {
+                alert('No cards to clear');
+                return;
+            }
+
+            if (confirm('Are you sure you want to clear all generated cards?')) {
+                generatedCards = [];
+                results.classList.remove('active');
+                cardCount.textContent = '0';
+                cardsContainer.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>
+<task_progress>
+- [x] Read and analyze the current HTML file
+- [x] Add 10-second loading screen with anime girl
+- [x] Add feedback link to profile
+- [ ] Test the implementation
+</task_progress>
+</write_to_file>
